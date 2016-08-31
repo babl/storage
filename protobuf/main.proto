@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package babl;
+
+service Storage {
+  rpc Info(Empty) returns (InfoResponse) {}
+}
+
+message Empty {}
+
+message InfoResponse {
+  string version = 1;
+  uint32 total_storage = 10; // in mb
+  uint32 free_storage = 11;  // in mb
+}
