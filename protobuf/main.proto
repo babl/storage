@@ -4,6 +4,7 @@ package babl;
 
 service Storage {
   rpc Info(Empty) returns (InfoResponse) {}
+  rpc Upload(stream UploadRequest) returns (stream UploadResponse) {}
 }
 
 message Empty {}
@@ -12,4 +13,25 @@ message InfoResponse {
   string version = 1;
   uint32 total_storage = 10; // in mb
   uint32 free_storage = 11;  // in mb
+}
+
+message UploadRequest {
+  bytes chunk = 1;
+  bool complete = 2;
+}
+
+message UploadResponse {
+  oneof test_oneof {
+    BlobInfo blob = 1;
+    UploadComplete status = 2;
+  }
+}
+
+message BlobInfo {
+  uint64 blob_id = 1;
+  string blob_url = 2;
+}
+
+message UploadComplete {
+  bool success = 1;
 }
