@@ -11,7 +11,7 @@ import (
 
 func StartFileServer() {
 	http.HandleFunc("/", handler)
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(FileServerAddress, nil)
 	check(err)
 }
 

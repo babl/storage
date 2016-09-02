@@ -17,9 +17,9 @@ type server struct{}
 
 func StartGrpcServer() {
 	log.SetLevel(log.DebugLevel)
-	lis, err := net.Listen("tcp", GrpcAddress)
+	lis, err := net.Listen("tcp", UploadServerAddress)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "address": GrpcAddress}).Fatal("Failed to listen at port")
+		log.WithFields(log.Fields{"error": err, "address": UploadServerAddress}).Fatal("Failed to listen at port")
 	}
 
 	opts := []grpc.ServerOption{grpc.MaxMsgSize(MaxMsgSize)}
@@ -85,7 +85,7 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 			TestOneof: &pb.UploadResponse_Blob{
 				Blob: &pb.BlobInfo{
 					BlobId:  id,
-					BlobUrl: "http://localhost:8080/" + blobKey(id),
+					BlobUrl: "http://babl.sh" + FileServerAddress + "/" + blobKey(id),
 				},
 			},
 		})

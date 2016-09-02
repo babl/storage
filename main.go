@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	MaxMsgSize     = 1024 * 1024 * 2 // 2 MB max message size
-	GrpcAddress    = ":4443"
-	KeepUploadsFor = 15 * time.Second
+	MaxMsgSize          = 1024 * 1024 * 2 // 2 MB max message size
+	UploadServerAddress = ":4443"
+	FileServerAddress   = ":4442"
+	KeepUploadsFor      = 15 * time.Second
 )
 
 var (
@@ -31,13 +32,13 @@ func main() {
 	cache, err = fscache.New("./cache", 0755, KeepUploadsFor)
 	check(err)
 
-	log.Infof("File Server starts at :8080")
+	log.Infof("File Server starts at %s", FileServerAddress)
 	go func() {
 		StartFileServer()
 		c <- syscall.SIGTERM
 	}()
 
-	log.Infof("Grpc Server starts at %s", GrpcAddress)
+	log.Infof("Upload Server starts at %s", UploadServerAddress)
 	go func() {
 		StartGrpcServer()
 		c <- syscall.SIGTERM
