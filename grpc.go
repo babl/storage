@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"net"
 	"sync"
@@ -31,6 +33,12 @@ func (s *server) Info(ctx context.Context, in *pb.Empty) (*pb.InfoResponse, erro
 
 func (s *server) Upload(stream pb.Storage_UploadServer) error {
 	id := GenBlobId()
+	key := blobKey(id)
+	if cache.Exists(key) {
+		log.WithFields(log.Fields{"blob_key": key}).Error("Newly generated blob key is already in use, this should not happen")
+		return errors.New(fmt.Sprintf("Newly generated blob key '%s' is already in use, this should not happen", key))
+	}
+
 	log.WithFields(log.Fields{"blob_id": id}).Info("Incoming upload")
 
 	var wg sync.WaitGroup
