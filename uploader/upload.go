@@ -41,7 +41,7 @@ func Upload(address string, blob io.Reader) error {
 					log.WithFields(log.Fields{"blob_id": blob.BlobId, "blob_url": blob.BlobUrl}).Info("Upload Id")
 				case *pb.UploadResponse_Status:
 					if resp.GetStatus().Success {
-						log.Println("Server confirmed upload successful")
+						log.Info("Server confirmed upload successful")
 					} else {
 						panic("Server: upload not successful")
 					}
@@ -91,7 +91,7 @@ func Upload(address string, blob io.Reader) error {
 		check(err)
 
 		wg.Done()
-		log.WithFields(log.Fields{"bytes_read_from_stdin": bytesRead}).Info("Upload done")
+		log.WithFields(log.Fields{"bytes_read": bytesRead}).Info("Upload done")
 	}()
 
 	wg.Wait()

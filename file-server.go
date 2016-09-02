@@ -30,5 +30,5 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	elapsed_ms := time.Since(start).Nanoseconds() / 1e6
-	log.WithFields(log.Fields{"status": status, "key": key, "duration_ms": elapsed_ms}).Info("File request served")
+	log.WithFields(log.Fields{"status": status, "key": key, "duration_ms": elapsed_ms}).Info("Blob request served")
 }

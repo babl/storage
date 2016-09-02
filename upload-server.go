@@ -17,7 +17,6 @@ import (
 type server struct{}
 
 func StartGrpcServer() {
-	log.SetLevel(log.DebugLevel)
 	lis, err := net.Listen("tcp", UploadServerAddress)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err, "address": UploadServerAddress}).Fatal("Failed to listen at port")
@@ -45,7 +44,6 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 		log.WithFields(log.Fields{"blob_key": key}).Error("Newly generated blob key is already in use, this should not happen")
 		return errors.New(fmt.Sprintf("Newly generated blob key '%s' is already in use, this should not happen", key))
 	}
-	log.WithFields(log.Fields{"blob_id": id}).Info("Incoming upload")
 
 	wg.Add(1)
 	go func() {
@@ -96,7 +94,7 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 
 	wg.Wait()
 	elapsed_ms := time.Since(start).Nanoseconds() / 1e6
-	log.WithFields(log.Fields{"blob_size": bytesWritten, "chunks": chunks, "duration_ms": elapsed_ms}).Info("Upload completed")
+	log.WithFields(log.Fields{"blob_id": id, "blob_size": bytesWritten, "chunks": chunks, "duration_ms": elapsed_ms}).Info("Blob upload completed")
 
 	return nil
 }
