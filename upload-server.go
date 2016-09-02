@@ -16,6 +16,7 @@ import (
 type server struct{}
 
 func StartGrpcServer() {
+	log.SetLevel(log.DebugLevel)
 	lis, err := net.Listen("tcp", GrpcAddress)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err, "address": GrpcAddress}).Fatal("Failed to listen at port")
@@ -64,11 +65,11 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 				check(err)
 				log.WithFields(log.Fields{"chunk_size": len(r.Chunk), "chunks": chunks}).Debug("Chunk received")
 				blob = append(blob, r.Chunk...)
+				writeBlob(id, r.Chunk)
 				chunks += 1
 			}
 		}
 		log.WithFields(log.Fields{"blob_size": len(blob), "chunks": chunks}).Info("Upload completed")
-		writeBlob(id, blob)
 		wg.Done()
 	}()
 
