@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -15,6 +16,7 @@ func StartFileServer() {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	key := r.URL.Path[1:]
 	blob, err := getBlobStream(key)
 	check(err)
@@ -26,5 +28,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		status = http.StatusOK
 		io.Copy(w, blob)
 	}
-	log.Infof("GET %d %s", status, r.URL.Path)
+
+	elapsed_ms := time.Since(start).Nanoseconds() / 1e6
+	log.WithFields(log.Fields{"status": status, "key": key, "duration_ms": elapsed_ms}).Info("File request served")
 }
