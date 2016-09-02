@@ -3,11 +3,9 @@
 package main
 
 import (
-	"io"
 	"math/rand"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -24,20 +22,6 @@ var (
 	random = rand.New(rand.NewSource(time.Now().UnixNano()))
 	cache  fscache.Cache
 )
-
-func GenBlobId() uint64 {
-	return uint64(random.Uint32())<<32 + uint64(random.Uint32())
-}
-
-func blobKey(id uint64) string {
-	return strconv.FormatUint(id, 16)
-}
-
-func getBlob(id uint64) io.Reader {
-	r, _, err := cache.Get(blobKey(id))
-	check(err)
-	return r
-}
 
 func main() {
 	c := make(chan os.Signal, 1)
@@ -61,10 +45,4 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
 	os.Exit(1)
-}
-
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
