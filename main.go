@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	MaxMsgSize  = 1024 * 1024 * 2 // 2 MB max message size
-	GrpcAddress = ":4443"
+	MaxMsgSize     = 1024 * 1024 * 2 // 2 MB max message size
+	GrpcAddress    = ":4443"
+	KeepUploadsFor = 15 * time.Second
 )
 
 var (
@@ -27,7 +28,7 @@ func main() {
 	c := make(chan os.Signal, 1)
 
 	var err error
-	cache, err = fscache.New("./cache", 0755, 1*time.Minute)
+	cache, err = fscache.New("./cache", 0755, KeepUploadsFor)
 	check(err)
 
 	log.Infof("File Server starts at :8080")
