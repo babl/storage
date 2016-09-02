@@ -22,7 +22,8 @@ const (
 )
 
 var (
-	debugFlag = flag.Bool("debug", false, "Debug mode")
+	debugFlag     = flag.Bool("debug", false, "Debug mode")
+	logFormatFlag = flag.String("log-format", "default", "Log format, options: default, json")
 
 	random = rand.New(rand.NewSource(time.Now().UnixNano()))
 	cache  fscache.Cache
@@ -32,6 +33,9 @@ func main() {
 	flag.Parse()
 	if *debugFlag {
 		log.SetLevel(log.DebugLevel)
+	}
+	if *logFormatFlag == "json" {
+		log.SetFormatter(&log.JSONFormatter{})
 	}
 
 	var err error
