@@ -3,6 +3,7 @@
 package main
 
 import (
+	"flag"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -21,16 +22,23 @@ const (
 )
 
 var (
+	debugFlag = flag.Bool("debug", false, "Debug mode")
+
 	random = rand.New(rand.NewSource(time.Now().UnixNano()))
 	cache  fscache.Cache
 )
 
 func main() {
-	c := make(chan os.Signal, 1)
+	flag.Parse()
+	if *debugFlag {
+		log.SetLevel(log.DebugLevel)
+	}
 
 	var err error
 	cache, err = fscache.New("./cache", 0755, KeepUploadsFor)
 	check(err)
+
+	c := make(chan os.Signal, 1)
 
 	log.Infof("File Server starts at %s", FileServerAddress)
 	go func() {
