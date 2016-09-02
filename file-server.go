@@ -15,17 +15,16 @@ func StartFileServer() {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	log.Infof("GET %s", r.URL.Path)
 	key := r.URL.Path[1:]
 	blob, err := getBlobStream(key)
 	check(err)
-
+	status := http.StatusNotFound
 	if blob == nil {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(status)
 		fmt.Fprintf(w, "Blob %s not found.", key)
 	} else {
+		status = http.StatusOK
 		io.Copy(w, blob)
 	}
-
-	log.Infof("done w/ GET %s", r.URL.Path)
+	log.Infof("GET %d %s", status, r.URL.Path)
 }
