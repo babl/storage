@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	pb "github.com/larskluge/babl-storage/protobuf"
@@ -33,7 +34,11 @@ func (s *server) Info(ctx context.Context, in *pb.Empty) (*pb.InfoResponse, erro
 }
 
 func (s *server) Upload(stream pb.Storage_UploadServer) error {
+	start := time.Now()
+	chunks := 0
+	bytesWritten := 0
 	var wg sync.WaitGroup
+
 	id := GenBlobId()
 	key := blobKey(id)
 	if cache.Exists(key) {
@@ -49,12 +54,9 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 		if blob == nil {
 			panic("did not get a writer..?")
 		}
-		chunks := 0
-		bytesWritten := 0
 		for {
 			r, err := stream.Recv()
 			if err == io.EOF {
-				log.Info("Upload successfully received")
 				err = stream.Send(&pb.UploadResponse{
 					TestOneof: &pb.UploadResponse_Status{
 						Status: &pb.UploadComplete{
@@ -74,7 +76,6 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 				chunks += 1
 			}
 		}
-		log.WithFields(log.Fields{"blob_size": bytesWritten, "chunks": chunks}).Info("Upload completed")
 		blob.Close()
 		wg.Done()
 	}()
@@ -94,6 +95,8 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 	}()
 
 	wg.Wait()
+	elapsed_ms := time.Since(start).Nanoseconds() / 1e6
+	log.WithFields(log.Fields{"blob_size": bytesWritten, "chunks": chunks, "duration_ms": elapsed_ms}).Info("Upload completed")
 
 	return nil
 }
