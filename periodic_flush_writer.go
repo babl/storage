@@ -29,9 +29,9 @@ func NewPeriodicFlushWriter(writer io.Writer) *PeriodicFlushWriter {
 	obj.timer = time.NewTimer(FlushDelay)
 	go func() {
 		for {
-			log.Info("wait for timer being triggered")
+			log.Debug("wait for timer being triggered")
 			<-obj.timer.C
-			log.Info("Timer: fired, flushing..")
+			log.Debug("Timer: fired, flushing..")
 			obj.Flush()
 		}
 	}()
@@ -41,19 +41,19 @@ func NewPeriodicFlushWriter(writer io.Writer) *PeriodicFlushWriter {
 func (w *PeriodicFlushWriter) Flush() {
 	if w.flusher != nil {
 		w.writeLock.Lock()
-		log.Info("Flushing..")
+		log.Debug("Flushing..")
 		w.flusher.Flush()
 		w.writeLock.Unlock()
 	}
 }
 
 func (w *PeriodicFlushWriter) ResetFlushTimeout() {
-	log.Info("Reset timer")
+	log.Debug("Reset timer")
 	if !w.timer.Stop() {
 		// <-w.timer.C
 	}
 
-	log.Info("Reset timer, really now")
+	log.Debug("Reset timer, really now")
 	w.timer.Reset(FlushDelay)
 }
 
