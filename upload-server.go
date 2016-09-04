@@ -28,7 +28,7 @@ func StartGrpcServer() {
 }
 
 func (s *server) Info(ctx context.Context, in *pb.InfoRequest) (*pb.InfoResponse, error) {
-	return &pb.InfoResponse{Version: "v0"}, nil
+	return &pb.InfoResponse{Version: Version}, nil
 }
 
 func (s *server) Upload(stream pb.Storage_UploadServer) error {
