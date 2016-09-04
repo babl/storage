@@ -35,6 +35,7 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 	start := time.Now()
 	chunks := 0
 	bytesWritten := 0
+	success := false
 	var wg sync.WaitGroup
 
 	id := GenBlobId()
@@ -62,11 +63,9 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 			chunks += 1
 
 			if r.Complete {
-				success := r.TotalBytesSent == uint64(bytesWritten)
+				success = r.TotalBytesSent == uint64(bytesWritten)
 				errMsg := ""
-				if success {
-					log.Info("Upload completed successful")
-				} else {
+				if !success {
 					errMsg = fmt.Sprintf("Client reports different blob size (%d bytes) than written to disk on server side (%d).", r.TotalBytesSent, bytesWritten)
 					log.Error(errMsg)
 				}
@@ -99,7 +98,12 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 
 	wg.Wait()
 	elapsed_ms := time.Since(start).Nanoseconds() / 1e6
-	log.WithFields(log.Fields{"blob_id": id, "blob_size": bytesWritten, "chunks": chunks, "duration_ms": elapsed_ms}).Info("Blob upload complete")
+	lf := log.WithFields(log.Fields{"blob_id": id, "blob_size": bytesWritten, "chunks": chunks, "duration_ms": elapsed_ms})
+	if success {
+		lf.Info("Blob upload successful")
+	} else {
+		lf.Warn("Blob upload failed")
+	}
 
 	return nil
 }
