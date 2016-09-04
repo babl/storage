@@ -26,7 +26,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Blob %s not found.", key)
 	} else {
 		status = http.StatusOK
-		io.Copy(w, blob)
+		pfw := NewPeriodicFlushWriter(w)
+		_, err := io.Copy(pfw, blob)
+		check(err)
+		pfw.Close()
 	}
 
 	elapsed_ms := time.Since(start).Nanoseconds() / 1e6
