@@ -1,20 +1,22 @@
 package main
 
 import (
+	"flag"
 	"os"
 
 	"github.com/larskluge/babl-storage/uploader"
 	"github.com/mattn/go-isatty"
 )
 
-const address = "localhost:4443"
+var endpointFlag = flag.String("endpoint", "localhost:4443", "Connect to endpoint")
 
 func main() {
+	flag.Parse()
 	if isatty.IsTerminal(os.Stdin.Fd()) {
 		panic("No stdin attached")
 	}
 
-	err := uploader.Upload(address, os.Stdin)
+	err := uploader.Upload(*endpointFlag, os.Stdin)
 	check(err)
 }
 
