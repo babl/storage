@@ -18,7 +18,7 @@ const (
 	MaxMsgSize          = 1024 * 1024 * 2 // 2 MB max message size
 	UploadServerAddress = ":4443"
 	FileServerAddress   = ":4442"
-	KeepUploadsFor      = 15 * time.Second
+	KeepUploadsFor      = 1 * time.Hour
 )
 
 var (
