@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"sync"
 	"time"
@@ -28,7 +27,7 @@ func StartGrpcServer() {
 	s.Serve(lis)
 }
 
-func (s *server) Info(ctx context.Context, in *pb.Empty) (*pb.InfoResponse, error) {
+func (s *server) Info(ctx context.Context, in *pb.InfoRequest) (*pb.InfoResponse, error) {
 	return &pb.InfoResponse{Version: "v0"}, nil
 }
 
@@ -54,24 +53,33 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 		}
 		for {
 			r, err := stream.Recv()
-			if err == io.EOF {
+			check(err)
+			log.WithFields(log.Fields{"chunk_size": len(r.Chunk), "chunks": chunks}).Debug("Chunk received")
+			n, err := blob.Write(r.Chunk)
+			check(err)
+			// blob.Flush()
+			bytesWritten += n
+			chunks += 1
+
+			if r.Complete {
+				success := r.TotalBytesSent == uint64(bytesWritten)
+				errMsg := ""
+				if success {
+					log.Info("Upload completed successful")
+				} else {
+					errMsg = fmt.Sprintf("Client reports different blob size (%d bytes) than written to disk on server side (%d).", r.TotalBytesSent, bytesWritten)
+					log.Error(errMsg)
+				}
+				// final upload response
 				err = stream.Send(&pb.UploadResponse{
-					TestOneof: &pb.UploadResponse_Status{
-						Status: &pb.UploadComplete{
-							Success: true,
-						},
-					},
+					BlobId:   id,
+					BlobUrl:  BlobUrl(id),
+					Complete: true,
+					Success:  success,
+					Error:    errMsg,
 				})
 				check(err)
 				break
-			} else {
-				check(err)
-				log.WithFields(log.Fields{"chunk_size": len(r.Chunk), "chunks": chunks}).Debug("Chunk received")
-				n, err := blob.Write(r.Chunk)
-				check(err)
-				// blob.Flush()
-				bytesWritten += n
-				chunks += 1
 			}
 		}
 		blob.Close()
@@ -81,12 +89,9 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 	wg.Add(1)
 	go func() {
 		err := stream.Send(&pb.UploadResponse{
-			TestOneof: &pb.UploadResponse_Blob{
-				Blob: &pb.BlobInfo{
-					BlobId:  id,
-					BlobUrl: "http://babl.sh" + FileServerAddress + "/" + blobKey(id),
-				},
-			},
+			BlobId:   id,
+			BlobUrl:  BlobUrl(id),
+			Complete: false,
 		})
 		check(err)
 		wg.Done()
@@ -94,7 +99,11 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 
 	wg.Wait()
 	elapsed_ms := time.Since(start).Nanoseconds() / 1e6
-	log.WithFields(log.Fields{"blob_id": id, "blob_size": bytesWritten, "chunks": chunks, "duration_ms": elapsed_ms}).Info("Blob upload completed")
+	log.WithFields(log.Fields{"blob_id": id, "blob_size": bytesWritten, "chunks": chunks, "duration_ms": elapsed_ms}).Info("Blob upload complete")
 
 	return nil
+}
+
+func BlobUrl(blobId uint64) string {
+	return "http://babl.sh" + FileServerAddress + "/" + blobKey(blobId)
 }

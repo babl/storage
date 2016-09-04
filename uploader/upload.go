@@ -31,21 +31,16 @@ func Upload(address string, blob io.Reader) error {
 	go func() {
 		for {
 			resp, err := stream.Recv()
-			if err == io.EOF {
-				break
-			} else {
-				check(err)
-				switch resp.TestOneof.(type) {
-				case *pb.UploadResponse_Blob:
-					blob := resp.GetBlob()
-					log.WithFields(log.Fields{"blob_id": blob.BlobId, "blob_url": blob.BlobUrl}).Info("Upload Id")
-				case *pb.UploadResponse_Status:
-					if resp.GetStatus().Success {
-						log.Info("Server confirmed upload successful")
-					} else {
-						panic("Server: upload not successful")
-					}
+			check(err)
+			if resp.Complete {
+				if resp.Success {
+					log.Info("Server confirmed upload successful")
+					break
+				} else {
+					panic("Server: upload not successful")
 				}
+			} else {
+				log.WithFields(log.Fields{"blob_id": resp.BlobId, "blob_url": resp.BlobUrl}).Info("Upload Id")
 			}
 		}
 		wg.Done()
@@ -68,19 +63,18 @@ func Upload(address string, blob io.Reader) error {
 			}
 			check(err)
 
-			if n > 0 {
-				if n < chunkSize {
-					chunk = chunk[:n]
-				}
-
-				req := pb.UploadRequest{
-					Chunk:    chunk,
-					Complete: false,
-				}
-
-				err = stream.Send(&req)
-				check(err)
+			if n < chunkSize {
+				chunk = chunk[:n]
 			}
+
+			req := pb.UploadRequest{
+				Chunk:          chunk,
+				TotalBytesSent: uint64(bytesRead),
+				Complete:       lastChunk,
+			}
+
+			err = stream.Send(&req)
+			check(err)
 
 			if lastChunk {
 				break

@@ -3,11 +3,11 @@ syntax = "proto3";
 package babl;
 
 service Storage {
-  rpc Info(Empty) returns (InfoResponse) {}
+  rpc Info(InfoRequest) returns (InfoResponse) {}
   rpc Upload(stream UploadRequest) returns (stream UploadResponse) {}
 }
 
-message Empty {}
+message InfoRequest {}
 
 message InfoResponse {
   string version = 1;
@@ -17,21 +17,14 @@ message InfoResponse {
 
 message UploadRequest {
   bytes chunk = 1;
-  bool complete = 2;
+  uint64 total_bytes_sent = 2; // bytes sent so far incl. current chunk
+  bool complete = 3;
 }
 
 message UploadResponse {
-  oneof test_oneof {
-    BlobInfo blob = 1;
-    UploadComplete status = 2;
-  }
-}
-
-message BlobInfo {
   uint64 blob_id = 1;
   string blob_url = 2;
-}
-
-message UploadComplete {
-  bool success = 1;
+  bool complete = 3;
+  bool success = 4;
+  string error = 5;
 }

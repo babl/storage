@@ -9,12 +9,10 @@ It is generated from these files:
 	main.proto
 
 It has these top-level messages:
-	Empty
+	InfoRequest
 	InfoResponse
 	UploadRequest
 	UploadResponse
-	BlobInfo
-	UploadComplete
 */
 package babl
 
@@ -38,13 +36,13 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type Empty struct {
+type InfoRequest struct {
 }
 
-func (m *Empty) Reset()                    { *m = Empty{} }
-func (m *Empty) String() string            { return proto.CompactTextString(m) }
-func (*Empty) ProtoMessage()               {}
-func (*Empty) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (m *InfoRequest) Reset()                    { *m = InfoRequest{} }
+func (m *InfoRequest) String() string            { return proto.CompactTextString(m) }
+func (*InfoRequest) ProtoMessage()               {}
+func (*InfoRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 type InfoResponse struct {
 	Version      string `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
@@ -58,8 +56,9 @@ func (*InfoResponse) ProtoMessage()               {}
 func (*InfoResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 type UploadRequest struct {
-	Chunk    []byte `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
-	Complete bool   `protobuf:"varint,2,opt,name=complete" json:"complete,omitempty"`
+	Chunk          []byte `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
+	TotalBytesSent uint64 `protobuf:"varint,2,opt,name=total_bytes_sent,json=totalBytesSent" json:"total_bytes_sent,omitempty"`
+	Complete       bool   `protobuf:"varint,3,opt,name=complete" json:"complete,omitempty"`
 }
 
 func (m *UploadRequest) Reset()                    { *m = UploadRequest{} }
@@ -68,10 +67,11 @@ func (*UploadRequest) ProtoMessage()               {}
 func (*UploadRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
 type UploadResponse struct {
-	// Types that are valid to be assigned to TestOneof:
-	//	*UploadResponse_Blob
-	//	*UploadResponse_Status
-	TestOneof isUploadResponse_TestOneof `protobuf_oneof:"test_oneof"`
+	BlobId   uint64 `protobuf:"varint,1,opt,name=blob_id,json=blobId" json:"blob_id,omitempty"`
+	BlobUrl  string `protobuf:"bytes,2,opt,name=blob_url,json=blobUrl" json:"blob_url,omitempty"`
+	Complete bool   `protobuf:"varint,3,opt,name=complete" json:"complete,omitempty"`
+	Success  bool   `protobuf:"varint,4,opt,name=success" json:"success,omitempty"`
+	Error    string `protobuf:"bytes,5,opt,name=error" json:"error,omitempty"`
 }
 
 func (m *UploadResponse) Reset()                    { *m = UploadResponse{} }
@@ -79,141 +79,11 @@ func (m *UploadResponse) String() string            { return proto.CompactTextSt
 func (*UploadResponse) ProtoMessage()               {}
 func (*UploadResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
-type isUploadResponse_TestOneof interface {
-	isUploadResponse_TestOneof()
-}
-
-type UploadResponse_Blob struct {
-	Blob *BlobInfo `protobuf:"bytes,1,opt,name=blob,oneof"`
-}
-type UploadResponse_Status struct {
-	Status *UploadComplete `protobuf:"bytes,2,opt,name=status,oneof"`
-}
-
-func (*UploadResponse_Blob) isUploadResponse_TestOneof()   {}
-func (*UploadResponse_Status) isUploadResponse_TestOneof() {}
-
-func (m *UploadResponse) GetTestOneof() isUploadResponse_TestOneof {
-	if m != nil {
-		return m.TestOneof
-	}
-	return nil
-}
-
-func (m *UploadResponse) GetBlob() *BlobInfo {
-	if x, ok := m.GetTestOneof().(*UploadResponse_Blob); ok {
-		return x.Blob
-	}
-	return nil
-}
-
-func (m *UploadResponse) GetStatus() *UploadComplete {
-	if x, ok := m.GetTestOneof().(*UploadResponse_Status); ok {
-		return x.Status
-	}
-	return nil
-}
-
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*UploadResponse) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _UploadResponse_OneofMarshaler, _UploadResponse_OneofUnmarshaler, _UploadResponse_OneofSizer, []interface{}{
-		(*UploadResponse_Blob)(nil),
-		(*UploadResponse_Status)(nil),
-	}
-}
-
-func _UploadResponse_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*UploadResponse)
-	// test_oneof
-	switch x := m.TestOneof.(type) {
-	case *UploadResponse_Blob:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Blob); err != nil {
-			return err
-		}
-	case *UploadResponse_Status:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Status); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("UploadResponse.TestOneof has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _UploadResponse_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*UploadResponse)
-	switch tag {
-	case 1: // test_oneof.blob
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(BlobInfo)
-		err := b.DecodeMessage(msg)
-		m.TestOneof = &UploadResponse_Blob{msg}
-		return true, err
-	case 2: // test_oneof.status
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(UploadComplete)
-		err := b.DecodeMessage(msg)
-		m.TestOneof = &UploadResponse_Status{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _UploadResponse_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*UploadResponse)
-	// test_oneof
-	switch x := m.TestOneof.(type) {
-	case *UploadResponse_Blob:
-		s := proto.Size(x.Blob)
-		n += proto.SizeVarint(1<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *UploadResponse_Status:
-		s := proto.Size(x.Status)
-		n += proto.SizeVarint(2<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
-}
-
-type BlobInfo struct {
-	BlobId  uint64 `protobuf:"varint,1,opt,name=blob_id,json=blobId" json:"blob_id,omitempty"`
-	BlobUrl string `protobuf:"bytes,2,opt,name=blob_url,json=blobUrl" json:"blob_url,omitempty"`
-}
-
-func (m *BlobInfo) Reset()                    { *m = BlobInfo{} }
-func (m *BlobInfo) String() string            { return proto.CompactTextString(m) }
-func (*BlobInfo) ProtoMessage()               {}
-func (*BlobInfo) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
-
-type UploadComplete struct {
-	Success bool `protobuf:"varint,1,opt,name=success" json:"success,omitempty"`
-}
-
-func (m *UploadComplete) Reset()                    { *m = UploadComplete{} }
-func (m *UploadComplete) String() string            { return proto.CompactTextString(m) }
-func (*UploadComplete) ProtoMessage()               {}
-func (*UploadComplete) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
-
 func init() {
-	proto.RegisterType((*Empty)(nil), "babl.Empty")
+	proto.RegisterType((*InfoRequest)(nil), "babl.InfoRequest")
 	proto.RegisterType((*InfoResponse)(nil), "babl.InfoResponse")
 	proto.RegisterType((*UploadRequest)(nil), "babl.UploadRequest")
 	proto.RegisterType((*UploadResponse)(nil), "babl.UploadResponse")
-	proto.RegisterType((*BlobInfo)(nil), "babl.BlobInfo")
-	proto.RegisterType((*UploadComplete)(nil), "babl.UploadComplete")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -227,7 +97,7 @@ const _ = grpc.SupportPackageIsVersion3
 // Client API for Storage service
 
 type StorageClient interface {
-	Info(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*InfoResponse, error)
+	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
 	Upload(ctx context.Context, opts ...grpc.CallOption) (Storage_UploadClient, error)
 }
 
@@ -239,7 +109,7 @@ func NewStorageClient(cc *grpc.ClientConn) StorageClient {
 	return &storageClient{cc}
 }
 
-func (c *storageClient) Info(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*InfoResponse, error) {
+func (c *storageClient) Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error) {
 	out := new(InfoResponse)
 	err := grpc.Invoke(ctx, "/babl.Storage/Info", in, out, c.cc, opts...)
 	if err != nil {
@@ -282,7 +152,7 @@ func (x *storageUploadClient) Recv() (*UploadResponse, error) {
 // Server API for Storage service
 
 type StorageServer interface {
-	Info(context.Context, *Empty) (*InfoResponse, error)
+	Info(context.Context, *InfoRequest) (*InfoResponse, error)
 	Upload(Storage_UploadServer) error
 }
 
@@ -291,7 +161,7 @@ func RegisterStorageServer(s *grpc.Server, srv StorageServer) {
 }
 
 func _Storage_Info_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(InfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -303,7 +173,7 @@ func _Storage_Info_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: "/babl.Storage/Info",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageServer).Info(ctx, req.(*Empty))
+		return srv.(StorageServer).Info(ctx, req.(*InfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -357,27 +227,25 @@ var _Storage_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("main.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 346 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x54, 0x92, 0xcf, 0x4f, 0xbb, 0x40,
-	0x10, 0xc5, 0xcb, 0x37, 0x14, 0xe8, 0x40, 0x7b, 0xd8, 0x6f, 0x13, 0xb1, 0xa7, 0x8a, 0x1e, 0xd0,
-	0x03, 0x31, 0xf5, 0xe4, 0xc5, 0xc4, 0x1a, 0x93, 0xf6, 0xba, 0xa6, 0xe7, 0x06, 0xe8, 0x56, 0x1b,
-	0xb7, 0x0c, 0xb2, 0x8b, 0x89, 0xff, 0xbd, 0x61, 0x96, 0x6d, 0xea, 0xf1, 0xcd, 0x3e, 0x3e, 0x6f,
-	0x7e, 0x00, 0x70, 0xcc, 0x0f, 0x55, 0x56, 0x37, 0xa8, 0x91, 0xb9, 0x45, 0x5e, 0xc8, 0xc4, 0x87,
-	0xe1, 0xeb, 0xb1, 0xd6, 0x3f, 0x49, 0x0d, 0xd1, 0xba, 0xda, 0x23, 0x17, 0xaa, 0xc6, 0x4a, 0x09,
-	0x16, 0x83, 0xff, 0x2d, 0x1a, 0x75, 0xc0, 0x2a, 0x76, 0xe6, 0x4e, 0x3a, 0xe2, 0x56, 0xb2, 0x6b,
-	0x18, 0x6b, 0xd4, 0xb9, 0xdc, 0x2a, 0x8d, 0x4d, 0xfe, 0x2e, 0x62, 0x98, 0x3b, 0xe9, 0x98, 0x47,
-	0x54, 0x7c, 0x33, 0x35, 0x76, 0x05, 0xd1, 0xbe, 0x11, 0xe2, 0xe4, 0x09, 0xc9, 0x13, 0x76, 0xb5,
-	0xde, 0x92, 0x3c, 0xc3, 0x78, 0x53, 0x4b, 0xcc, 0x77, 0x5c, 0x7c, 0xb5, 0x42, 0x69, 0x36, 0x85,
-	0x61, 0xf9, 0xd1, 0x56, 0x9f, 0x14, 0x18, 0x71, 0x23, 0xd8, 0x0c, 0x82, 0x12, 0x8f, 0xb5, 0x14,
-	0x5a, 0xc4, 0xff, 0xe6, 0x4e, 0x1a, 0xf0, 0x93, 0x4e, 0x34, 0x4c, 0x2c, 0xa2, 0x6f, 0xfb, 0x06,
-	0xdc, 0x42, 0x62, 0x41, 0x88, 0x70, 0x31, 0xc9, 0xba, 0x21, 0xb3, 0xa5, 0xc4, 0xa2, 0x1b, 0x6e,
-	0x35, 0xe0, 0xf4, 0xca, 0x32, 0xf0, 0x94, 0xce, 0x75, 0xab, 0x88, 0x18, 0x2e, 0xa6, 0xc6, 0x67,
-	0x58, 0x2f, 0x3d, 0x7d, 0x35, 0xe0, 0xbd, 0x6b, 0x19, 0x01, 0x68, 0xa1, 0xf4, 0x16, 0x2b, 0x81,
-	0xfb, 0xe4, 0x09, 0x02, 0x4b, 0x64, 0x17, 0xe0, 0x77, 0xc4, 0xed, 0x61, 0x47, 0x91, 0x2e, 0xf7,
-	0x3a, 0xb9, 0xde, 0xb1, 0x4b, 0x08, 0xe8, 0xa1, 0x6d, 0x24, 0x85, 0x8c, 0x38, 0x19, 0x37, 0x8d,
-	0x4c, 0xee, 0x6c, 0xd7, 0x36, 0xa9, 0x5b, 0xb6, 0x6a, 0xcb, 0x52, 0x28, 0x45, 0x94, 0x80, 0x5b,
-	0xb9, 0x40, 0xf0, 0xed, 0x4a, 0x6f, 0xc1, 0xa5, 0xc8, 0xd0, 0x34, 0x4b, 0x67, 0x9b, 0x31, 0x23,
-	0xce, 0x4f, 0x97, 0x0c, 0xd8, 0x23, 0x78, 0x26, 0x81, 0xfd, 0x3f, 0x9f, 0xac, 0x5f, 0xf4, 0x6c,
-	0xfa, 0xb7, 0x68, 0x3f, 0x4b, 0x9d, 0x7b, 0xa7, 0xf0, 0xe8, 0xef, 0x78, 0xf8, 0x0d, 0x00, 0x00,
-	0xff, 0xff, 0x4c, 0x8c, 0x5b, 0x57, 0x2b, 0x02, 0x00, 0x00,
+	// 320 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x92, 0x3f, 0x4f, 0xc3, 0x30,
+	0x10, 0xc5, 0x31, 0xa4, 0xff, 0xae, 0x49, 0x05, 0xa6, 0x12, 0xa6, 0x53, 0x08, 0x4b, 0xa6, 0x82,
+	0x60, 0x62, 0x65, 0xeb, 0xea, 0xaa, 0x73, 0x95, 0xa4, 0x57, 0xa8, 0xea, 0xda, 0xc1, 0x76, 0x90,
+	0xf8, 0x16, 0x7c, 0x64, 0x64, 0x3b, 0xa9, 0xda, 0x85, 0xf1, 0xfd, 0xee, 0x25, 0xcf, 0xf7, 0x6c,
+	0x80, 0x43, 0xb1, 0x93, 0xf3, 0x5a, 0x2b, 0xab, 0x68, 0x54, 0x16, 0xa5, 0xc8, 0x12, 0x18, 0x2f,
+	0xe4, 0x56, 0x71, 0xfc, 0x6a, 0xd0, 0xd8, 0xac, 0x86, 0x38, 0x48, 0x53, 0x2b, 0x69, 0x90, 0x32,
+	0x18, 0x7c, 0xa3, 0x36, 0x3b, 0x25, 0x19, 0x49, 0x49, 0x3e, 0xe2, 0x9d, 0xa4, 0x8f, 0x90, 0x58,
+	0x65, 0x0b, 0xb1, 0x36, 0x56, 0xe9, 0xe2, 0x03, 0x19, 0xa4, 0x24, 0x4f, 0x78, 0xec, 0xe1, 0x32,
+	0x30, 0xfa, 0x00, 0xf1, 0x56, 0x23, 0x1e, 0x3d, 0x63, 0xef, 0x19, 0x3b, 0xd6, 0x5a, 0xb2, 0x3d,
+	0x24, 0xab, 0x5a, 0xa8, 0x62, 0xd3, 0x1e, 0x81, 0x4e, 0xa1, 0x57, 0x7d, 0x36, 0x72, 0xef, 0x03,
+	0x63, 0x1e, 0x04, 0xcd, 0xe1, 0x3a, 0xc4, 0x95, 0x3f, 0x16, 0xcd, 0xda, 0xa0, 0xb4, 0xec, 0x32,
+	0x25, 0x79, 0xc4, 0x27, 0x9e, 0xbf, 0x3b, 0xbc, 0x44, 0x69, 0xe9, 0x0c, 0x86, 0x95, 0x3a, 0xd4,
+	0x02, 0x2d, 0xb2, 0xab, 0x94, 0xe4, 0x43, 0x7e, 0xd4, 0xd9, 0x2f, 0x81, 0x49, 0x97, 0xd6, 0x6e,
+	0x78, 0x07, 0x83, 0x52, 0xa8, 0x72, 0xbd, 0xdb, 0xf8, 0xc0, 0x88, 0xf7, 0x9d, 0x5c, 0x6c, 0xe8,
+	0x3d, 0x0c, 0xfd, 0xa0, 0xd1, 0xc2, 0x27, 0x8d, 0xb8, 0x37, 0xae, 0xb4, 0xf8, 0x2f, 0xc2, 0x35,
+	0x66, 0x9a, 0xaa, 0x42, 0x63, 0x58, 0xe4, 0x47, 0x9d, 0x74, 0x8b, 0xa1, 0xd6, 0x4a, 0xb3, 0x9e,
+	0xff, 0x5b, 0x10, 0x2f, 0x0d, 0x0c, 0xba, 0xb6, 0x9e, 0x20, 0x72, 0xe5, 0xd3, 0x9b, 0xb9, 0xbb,
+	0x9a, 0xf9, 0xc9, 0xbd, 0xcc, 0xe8, 0x29, 0x0a, 0x27, 0xcf, 0x2e, 0xe8, 0x1b, 0xf4, 0xc3, 0x36,
+	0xf4, 0x36, 0xcc, 0xcf, 0x9a, 0x9c, 0x4d, 0xcf, 0x61, 0xf7, 0x59, 0x4e, 0x9e, 0x49, 0xd9, 0xf7,
+	0x8f, 0xe0, 0xf5, 0x2f, 0x00, 0x00, 0xff, 0xff, 0xa5, 0x29, 0x92, 0xc6, 0x12, 0x02, 0x00, 0x00,
 }
