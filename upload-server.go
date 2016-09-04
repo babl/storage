@@ -105,5 +105,5 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 }
 
 func BlobUrl(blobId uint64) string {
-	return "http://babl.sh" + FileServerAddress + "/" + blobKey(blobId)
+	return "http://" + FileServerAddress + "/" + blobKey(blobId)
 }
