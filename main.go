@@ -18,13 +18,13 @@ const (
 	Version             = "0.1.0"
 	MaxMsgSize          = 1024 * 1024 * 2 // 2 MB max message size
 	UploadServerAddress = ":4443"
-	FileServerAddress   = "localhost:4442"
 	KeepUploadsFor      = 1 * time.Hour
 )
 
 var (
-	debugFlag     = flag.Bool("debug", false, "Debug mode")
-	logFormatFlag = flag.String("log-format", "default", "Log format, options: default, json")
+	debugFlag             = flag.Bool("debug", false, "Debug mode")
+	logFormatFlag         = flag.String("log-format", "default", "Log format, options: default, json")
+	fileServerAddressFlag = flag.String("file-server-address", "localhost:4442", "Address to start the file server at")
 
 	random = rand.New(rand.NewSource(time.Now().UnixNano()))
 	cache  fscache.Cache
@@ -45,7 +45,7 @@ func main() {
 
 	c := make(chan os.Signal, 1)
 
-	log.Infof("File Server starts at %s", FileServerAddress)
+	log.Infof("File Server starts at %s", *fileServerAddressFlag)
 	go func() {
 		StartFileServer()
 		c <- syscall.SIGTERM
