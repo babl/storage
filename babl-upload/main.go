@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/larskluge/babl-storage/uploader"
 	"github.com/mattn/go-isatty"
 )
@@ -16,8 +17,14 @@ func main() {
 		panic("No stdin attached")
 	}
 
-	err := uploader.Upload(*endpointFlag, os.Stdin)
+	upload, err := uploader.New(*endpointFlag, os.Stdin)
 	check(err)
+	log.WithFields(log.Fields{"blob_id": upload.Id, "blob_url": upload.Url}).Info("Upload Id")
+	success := upload.WaitForCompletion()
+	if success {
+		log.Info("Server confirmed upload successful")
+	}
+	upload.Close()
 }
 
 func check(err error) {

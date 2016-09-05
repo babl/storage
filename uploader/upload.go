@@ -3,9 +3,9 @@ package uploader
 import (
 	"bufio"
 	"io"
+	"log"
 	"sync"
 
-	log "github.com/Sirupsen/logrus"
 	pb "github.com/larskluge/babl-storage/protobuf"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -13,83 +13,130 @@ import (
 
 const chunkSize = 1024 * 100 // 100 kb
 
-func Upload(address string, blob io.Reader) error {
+type Upload struct {
+	Id       uint64
+	Url      string
+	Complete bool
+	Success  bool
+	Error    string
+
+	conn           grpc.ClientConn
+	stream         pb.Storage_UploadClient
+	blob           io.Reader
+	completionCond sync.Cond
+}
+
+func New(address string, blob io.Reader) (*Upload, error) {
+	var m sync.Mutex
+	m.Lock()
+	obj := Upload{Complete: false, Success: false, Error: "", completionCond: *sync.NewCond(&m)}
+	err := obj.startUploading(address, blob)
+	if err == nil {
+		return &obj, nil
+	} else {
+		return nil, err
+	}
+}
+
+func (up *Upload) handleIncomingData(metadataAvailable *sync.Cond) {
+	for {
+		resp, err := up.stream.Recv()
+		check(err)
+		if resp.Complete {
+			up.Complete = true
+			up.Success = resp.Success
+			up.completionCond.Broadcast()
+			if resp.Success {
+				break
+			} else {
+				panic("Server: upload not successful")
+			}
+		} else {
+			up.Id = resp.BlobId
+			up.Url = resp.BlobUrl
+			metadataAvailable.Broadcast()
+		}
+	}
+}
+
+func (up *Upload) handleOutgoingData(blob io.Reader) {
+	reader := bufio.NewReader(blob)
+	bytesRead := 0
+
+	for {
+		chunk := make([]byte, chunkSize)
+		n, err := reader.Read(chunk)
+		bytesRead += n
+
+		lastChunk := false
+		if err == io.EOF {
+			lastChunk = true
+			err = nil
+		}
+		check(err)
+
+		if n < chunkSize {
+			chunk = chunk[:n]
+		}
+
+		req := pb.UploadRequest{
+			Chunk:          chunk,
+			TotalBytesSent: uint64(bytesRead),
+			Complete:       lastChunk,
+		}
+
+		err = up.stream.Send(&req)
+		check(err)
+
+		if lastChunk {
+			break
+		}
+	}
+
+	err := up.stream.CloseSend()
+	check(err)
+}
+
+func (up *Upload) startUploading(address string, blob io.Reader) error {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		log.Error("did not connect: %v", err)
 		return err
 	}
-	defer conn.Close()
+	up.conn = *conn
 	c := pb.NewStorageClient(conn)
 
 	// Upload
 	stream, err := c.Upload(context.Background())
 	check(err)
-	var wg sync.WaitGroup
+	up.stream = stream
 
-	wg.Add(1)
-	go func() {
-		for {
-			resp, err := stream.Recv()
-			check(err)
-			if resp.Complete {
-				if resp.Success {
-					log.Info("Server confirmed upload successful")
-					break
-				} else {
-					panic("Server: upload not successful")
-				}
-			} else {
-				log.WithFields(log.Fields{"blob_id": resp.BlobId, "blob_url": resp.BlobUrl}).Info("Upload Id")
-			}
-		}
-		wg.Done()
-	}()
+	var m sync.Mutex
+	m.Lock()
+	metadataAvailable := sync.NewCond(&m)
+	go up.handleIncomingData(metadataAvailable)
 
-	wg.Add(1)
-	go func() {
-		reader := bufio.NewReader(blob)
-		bytesRead := 0
+	go up.handleOutgoingData(blob)
 
-		for {
-			chunk := make([]byte, chunkSize)
-			n, err := reader.Read(chunk)
-			bytesRead += n
+	// TODO: auto close
+	// go func() {
+	// 	up.WaitForCompletion()
+	// 	up.Close()
+	// }()
 
-			lastChunk := false
-			if err == io.EOF {
-				lastChunk = true
-				err = nil
-			}
-			check(err)
-
-			if n < chunkSize {
-				chunk = chunk[:n]
-			}
-
-			req := pb.UploadRequest{
-				Chunk:          chunk,
-				TotalBytesSent: uint64(bytesRead),
-				Complete:       lastChunk,
-			}
-
-			err = stream.Send(&req)
-			check(err)
-
-			if lastChunk {
-				break
-			}
-		}
-
-		err = stream.CloseSend()
-		check(err)
-
-		wg.Done()
-		log.WithFields(log.Fields{"bytes_read": bytesRead}).Info("Upload done")
-	}()
-
-	wg.Wait()
+	metadataAvailable.Wait()
 	return nil
+}
+
+func (up *Upload) WaitForCompletion() bool {
+	if !up.Complete {
+		up.completionCond.Wait()
+	}
+	return up.Success
+}
+
+func (up *Upload) Close() error {
+	log.Println("Closingggggggg")
+	return up.conn.Close()
 }
 
 func check(err error) {
