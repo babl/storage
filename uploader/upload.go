@@ -3,7 +3,6 @@ package uploader
 import (
 	"bufio"
 	"io"
-	"log"
 	"sync"
 
 	pb "github.com/larskluge/babl-storage/protobuf"
@@ -117,12 +116,6 @@ func (up *Upload) startUploading(address string, blob io.Reader) error {
 
 	go up.handleOutgoingData(blob)
 
-	// TODO: auto close
-	// go func() {
-	// 	up.WaitForCompletion()
-	// 	up.Close()
-	// }()
-
 	metadataAvailable.Wait()
 	return nil
 }
@@ -130,13 +123,9 @@ func (up *Upload) startUploading(address string, blob io.Reader) error {
 func (up *Upload) WaitForCompletion() bool {
 	if !up.Complete {
 		up.completionCond.Wait()
+		up.conn.Close() // TODO: make sure close is called only once
 	}
 	return up.Success
-}
-
-func (up *Upload) Close() error {
-	log.Println("Closingggggggg")
-	return up.conn.Close()
 }
 
 func check(err error) {

@@ -24,7 +24,6 @@ func main() {
 	if success {
 		log.Info("Server confirmed upload successful")
 	}
-	upload.Close()
 }
 
 func check(err error) {
