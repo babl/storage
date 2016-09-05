@@ -21,8 +21,9 @@ const (
 )
 
 var (
-	fileServerAddressFlag   = flag.String("file-server-address", "localhost:4442", "Address to start the file server at")
+	fileServerAddressFlag   = flag.String("file-server-address", ":4442", "Address to start the file server at")
 	uploadServerAddressFlag = flag.String("upload-server-address", ":4443", "Address to start the upload server at")
+	blobUrlTmplFlag         = flag.String("blob-url-template", "http://localhost:4442/%s", "Template for public accessible blob url, %s is replaced with blob key")
 	cacheDirFlag            = flag.String("cache-dir", "./cache", "Path to cache directory used for upload blob storage")
 	logFormatFlag           = flag.String("log-format", "default", "Log format, options: default, json")
 	debugFlag               = flag.Bool("debug", false, "Debug mode")
