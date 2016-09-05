@@ -16,9 +16,9 @@ import (
 type server struct{}
 
 func StartGrpcServer() {
-	lis, err := net.Listen("tcp", UploadServerAddress)
+	lis, err := net.Listen("tcp", *uploadServerAddressFlag)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "address": UploadServerAddress}).Fatal("Failed to listen at port")
+		log.WithFields(log.Fields{"error": err, "address": *uploadServerAddressFlag}).Fatal("Failed to listen at port")
 	}
 
 	opts := []grpc.ServerOption{grpc.MaxMsgSize(MaxMsgSize)}
