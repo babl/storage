@@ -1,0 +1,5 @@
+#!/bin/sh -x
+
+gox -osarch="linux/amd64"
+babl-build build
+rm -f babl-storage_linux_amd64
