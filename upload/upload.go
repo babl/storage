@@ -1,10 +1,11 @@
-package uploader
+package upload
 
 import (
 	"bufio"
 	"io"
 	"sync"
 
+	log "github.com/Sirupsen/logrus"
 	pb "github.com/larskluge/babl-storage/protobuf"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -31,6 +32,7 @@ func New(address string, blob io.Reader) (*Upload, error) {
 	obj := Upload{Complete: false, Success: false, Error: "", completionCond: *sync.NewCond(&m)}
 	err := obj.startUploading(address, blob)
 	if err == nil {
+		log.WithFields(log.Fields{"blob_id": obj.Id, "blob_url": obj.Url}).Info("Store large payload externally")
 		return &obj, nil
 	} else {
 		return nil, err
@@ -123,7 +125,10 @@ func (up *Upload) startUploading(address string, blob io.Reader) error {
 func (up *Upload) WaitForCompletion() bool {
 	if !up.Complete {
 		up.completionCond.Wait()
-		up.conn.Close() // TODO: make sure close is called only once
+		up.conn.Close() // TODO: make sure close is called only and at least once
+	}
+	if !up.Success {
+		log.WithFields(log.Fields{"blob_id": up.Id, "blob_url": up.Url}).Error("Large payload upload failed")
 	}
 	return up.Success
 }

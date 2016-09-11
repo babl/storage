@@ -5,7 +5,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/larskluge/babl-storage/uploader"
+	"github.com/larskluge/babl-storage/upload"
 	"github.com/mattn/go-isatty"
 )
 
@@ -17,7 +17,7 @@ func main() {
 		panic("No stdin attached")
 	}
 
-	upload, err := uploader.New(*endpointFlag, os.Stdin)
+	upload, err := upload.New(*endpointFlag, os.Stdin)
 	check(err)
 	log.WithFields(log.Fields{"blob_id": upload.Id, "blob_url": upload.Url}).Info("Upload Id")
 	success := upload.WaitForCompletion()
