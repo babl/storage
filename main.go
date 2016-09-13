@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	Version        = "0.1.0"
+	Version        = "0.1.1"
 	MaxMsgSize     = 1024 * 1024 * 2 // 2 MB max message size
 	KeepUploadsFor = 1 * time.Hour
 )
