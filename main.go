@@ -4,6 +4,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -27,6 +28,7 @@ var (
 	cacheDirFlag            = flag.String("cache-dir", "./cache", "Path to cache directory used for upload blob storage")
 	logFormatFlag           = flag.String("log-format", "default", "Log format, options: default, json")
 	debugFlag               = flag.Bool("debug", false, "Debug mode")
+	versionFlag             = flag.Bool("version", false, "Print version and exit")
 
 	random = rand.New(rand.NewSource(time.Now().UnixNano()))
 	cache  fscache.Cache
@@ -34,6 +36,12 @@ var (
 
 func main() {
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(Version)
+		os.Exit(0)
+	}
+
 	if *debugFlag {
 		log.SetLevel(log.DebugLevel)
 	}
