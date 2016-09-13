@@ -54,6 +54,10 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 		}
 		for {
 			r, err := stream.Recv()
+			if err == context.Canceled {
+				log.WithError(err).Error("Client canceled upload")
+				break
+			}
 			check(err)
 			log.WithFields(log.Fields{"chunk_size": len(r.Chunk), "chunks": chunks}).Debug("Chunk received")
 			n, err := blob.Write(r.Chunk)
