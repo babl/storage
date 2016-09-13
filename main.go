@@ -55,18 +55,17 @@ func main() {
 
 	c := make(chan os.Signal, 1)
 
-	log.Infof("File Server starts at %s", *fileServerAddressFlag)
 	go func() {
 		StartFileServer()
 		c <- syscall.SIGTERM
 	}()
 
-	log.Infof("Upload Server starts at %s", *uploadServerAddressFlag)
 	go func() {
 		StartGrpcServer()
 		c <- syscall.SIGTERM
 	}()
 
+	log.WithFields(log.Fields{"version": Version, "file_server_address": *fileServerAddressFlag, "upload_server_address": *uploadServerAddressFlag, "blob_url_template": *blobUrlTmplFlag, "debug": *debugFlag}).Info("Babl Storage Started")
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
 	os.Exit(1)
