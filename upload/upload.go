@@ -95,7 +95,9 @@ func (up *Upload) handleOutgoingData(blob io.Reader) {
 	}
 
 	err := up.stream.CloseSend()
-	check(err)
+	if err != nil {
+		log.WithError(err).Warn("upload: handleOutgoingData: closing stream unsuccessful")
+	}
 }
 
 func (up *Upload) startUploading(address string, blob io.Reader) error {
