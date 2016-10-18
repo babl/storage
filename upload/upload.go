@@ -110,7 +110,7 @@ func (up *Upload) startUploading(address string, blob io.Reader) error {
 
 	// Upload
 	stream, err := c.Upload(context.Background())
-	check(err)
+	check(err) // FIXME what if babl-storage is down ?
 	up.stream = stream
 
 	var m sync.Mutex
