@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"sync"
 	"time"
@@ -57,6 +58,13 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 			if err == context.Canceled {
 				log.WithError(err).Error("Client canceled upload")
 				break
+			}
+			if err == io.EOF {
+				log.WithError(err).WithFields(log.Fields{"chunk_size": len(r.Chunk)}).Error("io.EOF read")
+			} else if err == io.ErrUnexpectedEOF {
+				log.WithError(err).WithFields(log.Fields{"chunk_size": len(r.Chunk)}).Error("io.ErrUnexpectedEOF read")
+			} else {
+				log.WithError(err).WithFields(log.Fields{"chunk_size": len(r.Chunk)}).Error("Unknown error occured")
 			}
 			check(err)
 			log.WithFields(log.Fields{"chunk_size": len(r.Chunk), "chunks": chunks}).Debug("Chunk received")
