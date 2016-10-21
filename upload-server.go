@@ -63,7 +63,7 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 				log.WithError(err).WithFields(log.Fields{"chunk_size": len(r.Chunk)}).Error("io.EOF read")
 			} else if err == io.ErrUnexpectedEOF {
 				log.WithError(err).WithFields(log.Fields{"chunk_size": len(r.Chunk)}).Error("io.ErrUnexpectedEOF read")
-			} else {
+			} else if err != nil {
 				log.WithError(err).WithFields(log.Fields{"chunk_size": len(r.Chunk)}).Error("Unknown error occured")
 			}
 			check(err)
