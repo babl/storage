@@ -65,7 +65,7 @@ func main() {
 		c <- syscall.SIGTERM
 	}()
 
-	log.WithFields(log.Fields{"version": Version, "file_server_address": *fileServerAddressFlag, "upload_server_address": *uploadServerAddressFlag, "blob_url_template": *blobUrlTmplFlag, "debug": *debugFlag}).Info("Babl Storage Started")
+	log.WithFields(log.Fields{"version": Version, "file_server_address": *fileServerAddressFlag, "upload_server_address": *uploadServerAddressFlag, "blob_url_template": *blobUrlTmplFlag, "debug": *debugFlag}).Warn("Babl Storage Started")
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
 	os.Exit(1)
