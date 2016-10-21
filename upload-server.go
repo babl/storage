@@ -102,7 +102,7 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 
 	wg.Wait()
 	elapsed_ms := time.Since(start).Nanoseconds() / 1e6
-	lf := log.WithFields(log.Fields{"blob_id": id, "blob_size": bytesWritten, "chunks": chunks, "duration_ms": elapsed_ms})
+	lf := log.WithFields(log.Fields{"blob_url": BlobUrl(id), "blob_size": bytesWritten, "chunks": chunks, "duration_ms": elapsed_ms})
 	if success {
 		lf.Info("Blob upload successful")
 	} else {
