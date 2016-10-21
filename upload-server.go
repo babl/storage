@@ -39,6 +39,12 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 	success := false
 	var wg sync.WaitGroup
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.Errorf("Some weird shit's going on: %+v", r)
+		}
+	}()
+
 	id := GenBlobId()
 	key := blobKey(id)
 	if cache.Exists(key) {
