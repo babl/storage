@@ -127,7 +127,10 @@ func (up *Upload) startUploading(address string, blob io.Reader) error {
 func (up *Upload) WaitForCompletion() bool {
 	if !up.Complete {
 		up.completionCond.Wait()
-		up.conn.Close() // TODO: make sure close is called only and at least once
+		err := up.conn.Close() // TODO: make sure close is called only and at least once
+		if err != nil {
+			log.WithError(err).Error("Closing upload connection failed")
+		}
 	}
 	if !up.Success {
 		log.WithFields(log.Fields{"blob_id": up.Id, "blob_url": up.Url}).Error("Large payload upload failed")
