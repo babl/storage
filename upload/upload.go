@@ -2,8 +2,10 @@ package upload
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	pb "github.com/larskluge/babl-storage/protobuf"
@@ -101,6 +103,9 @@ func (up *Upload) handleOutgoingData(blob io.Reader) {
 }
 
 func (up *Upload) startUploading(address string, blob io.Reader) error {
+	var errc = make(chan error, 1)
+	defer close(errc)
+
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		return err
@@ -117,11 +122,19 @@ func (up *Upload) startUploading(address string, blob io.Reader) error {
 	m.Lock()
 	metadataAvailable := sync.NewCond(&m)
 	go up.handleIncomingData(metadataAvailable)
-
 	go up.handleOutgoingData(blob)
 
-	metadataAvailable.Wait()
-	return nil
+	timeout := time.AfterFunc(10*time.Second, func() {
+		errc <- errors.New("Timeout failure trying to get upload metadata")
+	})
+	defer timeout.Stop()
+
+	go func(metadataAvailable *sync.Cond) {
+		metadataAvailable.Wait()
+		errc <- nil
+	}(metadataAvailable)
+
+	return <-errc
 }
 
 func (up *Upload) WaitForCompletion() bool {
