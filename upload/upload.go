@@ -120,11 +120,10 @@ func (up *Upload) startUploading(address string, blob io.Reader) error {
 	m.Lock()
 	metadataAvailable := sync.NewCond(&m)
 	go up.handleIncomingData(metadataAvailable)
-
 	go up.handleOutgoingData(blob)
 
 	timeout := time.AfterFunc(10*time.Second, func() {
-		errc <- errors.New("Fail to get metadata from storage!")
+		errc <- errors.New("Timeout failure trying to get upload metadata")
 	})
 	defer timeout.Stop()
 
