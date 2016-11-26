@@ -5,7 +5,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -30,8 +29,7 @@ var (
 	debugFlag               = flag.Bool("debug", false, "Debug mode")
 	versionFlag             = flag.Bool("version", false, "Print version and exit")
 
-	random = rand.New(rand.NewSource(time.Now().UnixNano()))
-	cache  fscache.Cache
+	cache fscache.Cache
 )
 
 func main() {

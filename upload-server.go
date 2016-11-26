@@ -9,6 +9,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	. "github.com/larskluge/babl-storage/blob"
 	pb "github.com/larskluge/babl-storage/protobuf"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -46,7 +47,7 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 	}()
 
 	id := GenBlobId()
-	key := blobKey(id)
+	key := BlobKey(id)
 	if cache.Exists(key) {
 		log.WithFields(log.Fields{"blob_key": key}).Error("Newly generated blob key is already in use, this should not happen")
 		return errors.New(fmt.Sprintf("Newly generated blob key '%s' is already in use, this should not happen", key))
@@ -54,7 +55,7 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 
 	wg.Add(1)
 	go func() {
-		_, blob, err := cache.Get(blobKey(id))
+		_, blob, err := cache.Get(BlobKey(id))
 		check(err)
 		if blob == nil {
 			panic("did not get a writer..?")
@@ -128,5 +129,5 @@ func (s *server) Upload(stream pb.Storage_UploadServer) error {
 }
 
 func BlobUrl(blobId uint64) string {
-	return fmt.Sprintf(*blobUrlTmplFlag, blobKey(blobId))
+	return fmt.Sprintf(*blobUrlTmplFlag, BlobKey(blobId))
 }

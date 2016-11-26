@@ -8,6 +8,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	. "github.com/larskluge/babl-storage/blob"
 	pb "github.com/larskluge/babl-storage/protobuf"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -34,7 +35,7 @@ func New(address string, blob io.Reader) (*Upload, error) {
 	obj := Upload{Complete: false, Success: false, Error: "", completionCond: *sync.NewCond(&m)}
 	err := obj.startUploading(address, blob)
 	if err == nil {
-		log.WithFields(log.Fields{"blob_id": obj.Id, "blob_url": obj.Url}).Info("Store large payload externally")
+		log.WithFields(log.Fields{"blob_key": BlobKey(obj.Id), "blob_url": obj.Url}).Info("Store large payload externally")
 		return &obj, nil
 	} else {
 		return nil, err
@@ -146,7 +147,7 @@ func (up *Upload) WaitForCompletion() bool {
 		}
 	}
 	if !up.Success {
-		log.WithFields(log.Fields{"blob_id": up.Id, "blob_url": up.Url}).Error("Large payload upload failed")
+		log.WithFields(log.Fields{"blob_key": BlobKey(up.Id), "blob_url": up.Url}).Error("Large payload upload failed")
 	}
 	return up.Success
 }
