@@ -8,7 +8,6 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	. "github.com/larskluge/babl-storage/blob"
 	pb "github.com/larskluge/babl-storage/protobuf"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -23,20 +22,20 @@ type Upload struct {
 	Success  bool
 	Error    string
 
-	conn           grpc.ClientConn
+	conn           *grpc.ClientConn
 	stream         pb.Storage_UploadClient
 	blob           io.Reader
-	completionCond sync.Cond
+	completionCond *sync.Cond
 }
 
 func New(address string, blob io.Reader) (*Upload, error) {
 	var m sync.Mutex
 	m.Lock()
-	obj := Upload{Complete: false, Success: false, Error: "", completionCond: *sync.NewCond(&m)}
+	obj := &Upload{Complete: false, Success: false, completionCond: sync.NewCond(&m)}
 	err := obj.startUploading(address, blob)
 	if err == nil {
-		log.WithFields(log.Fields{"blob_key": BlobKey(obj.Id), "blob_url": obj.Url}).Info("Store large payload externally")
-		return &obj, nil
+		log.WithFields(log.Fields{"blob_url": obj.Url}).Info("Uploading payload")
+		return obj, nil
 	} else {
 		return nil, err
 	}
@@ -112,7 +111,7 @@ func (up *Upload) startUploading(address string, blob io.Reader) error {
 	if err != nil {
 		return err
 	}
-	up.conn = *conn
+	up.conn = conn
 	c := pb.NewStorageClient(conn)
 
 	// Upload
@@ -148,7 +147,7 @@ func (up *Upload) WaitForCompletion() bool {
 		}
 	}
 	if !up.Success {
-		log.WithFields(log.Fields{"blob_key": BlobKey(up.Id), "blob_url": up.Url}).Error("Large payload upload failed")
+		log.WithFields(log.Fields{"blob_url": up.Url}).Error("Upload failed")
 	}
 	return up.Success
 }
