@@ -45,14 +45,15 @@ func New(address string, blob io.Reader) (*Upload, error) {
 func (up *Upload) handleIncomingData(metadataAvailable *sync.Cond) {
 	for {
 		resp, err := up.stream.Recv()
+		if err == io.EOF {
+			up.completionCond.Broadcast()
+			break
+		}
 		check(err)
 		if resp.Complete {
 			up.Complete = true
 			up.Success = resp.Success
-			up.completionCond.Broadcast()
-			if resp.Success {
-				break
-			} else {
+			if !resp.Success {
 				panic("Server: upload not successful")
 			}
 		} else {
