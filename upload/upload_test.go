@@ -24,18 +24,18 @@ var _ = BeforeSuite(func() {
 	session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
 	Ω(err).ShouldNot(HaveOccurred())
 	time.Sleep(1 * time.Second)
+	Ω(session.ExitCode()).Should(Equal(-1)) // -1 to check if the process runs
 })
 
 var _ = AfterSuite(func() {
 	gexec.CleanupBuildArtifacts()
-
 	session.Terminate().Wait()
 })
 
 var _ = Describe("Upload", func() {
 	It("uploads", func() {
 		r := strings.NewReader("foo")
-		upload, err := upload.New("localhost:4443", r)
+		upload, err := upload.New("127.0.0.1:4443", r)
 		Ω(err).ShouldNot(HaveOccurred())
 		success := upload.WaitForCompletion()
 		Expect(success).To(Equal(true))
