@@ -28,8 +28,10 @@ var (
 	logFormatFlag           = flag.String("log-format", "default", "Log format, options: default, json")
 	debugFlag               = flag.Bool("debug", false, "Debug mode")
 	versionFlag             = flag.Bool("version", false, "Print version and exit")
+	restartTimeoutFlag      = flag.String("restart-timeout", "0s", "Timeout after each babl-storage restarts (defaults to none)")
 
-	cache fscache.Cache
+	cache          fscache.Cache
+	RestartTimeout time.Duration
 )
 
 func main() {
@@ -43,6 +45,7 @@ func main() {
 	if *debugFlag {
 		log.SetLevel(log.DebugLevel)
 	}
+
 	if *logFormatFlag == "json" {
 		log.SetFormatter(&log.JSONFormatter{})
 	}
@@ -50,6 +53,10 @@ func main() {
 	var err error
 	cache, err = fscache.New(*cacheDirFlag, 0755, KeepUploadsFor)
 	check(err)
+
+	if RestartTimeout, err = time.ParseDuration(*restartTimeoutFlag); err != nil {
+		panic("restart-timeout: Restart timeout not a valid duration")
+	}
 
 	c := make(chan os.Signal, 1)
 
@@ -62,6 +69,10 @@ func main() {
 		StartGrpcServer()
 		c <- syscall.SIGTERM
 	}()
+
+	if nullRestartTimeout, _ := time.ParseDuration("0s"); nullRestartTimeout != RestartTimeout {
+		scheduleRestart()
+	}
 
 	log.WithFields(log.Fields{"version": Version, "file_server_address": *fileServerAddressFlag, "upload_server_address": *uploadServerAddressFlag, "blob_url_template": *blobUrlTmplFlag, "debug": *debugFlag}).Warn("Babl Storage Started")
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
