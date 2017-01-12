@@ -71,7 +71,7 @@ func main() {
 	}()
 
 	if nullRestartTimeout, _ := time.ParseDuration("0s"); nullRestartTimeout != RestartTimeout {
-		go scheduleRestart()
+		scheduleRestart()
 	}
 
 	log.WithFields(log.Fields{"version": Version, "file_server_address": *fileServerAddressFlag, "upload_server_address": *uploadServerAddressFlag, "blob_url_template": *blobUrlTmplFlag, "debug": *debugFlag}).Warn("Babl Storage Started")
